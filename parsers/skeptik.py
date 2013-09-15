@@ -36,7 +36,13 @@ def logparser(log):
 
 def is_valid_event(event):
     ''' Filter function to check whether or not an event is a valid event. 
-    Returns a boolean. '''
+    Returns a boolean. 
+    
+    >>> is_valid_event('World triggered "Round_Start"')
+    True
+    >>> is_valid_event('World triggered "WTF THIS IS BROKEN"')
+    False
+    '''
 
     # Team Win event
     if event.startswith("Team") and ("CTs_Win" in event or "Terrorists_Win" in event):
@@ -121,9 +127,9 @@ def parse_player(pstring):
     ''' Parses a player string.
     
     >>> pstring = "bl00db4th<13><STEAM_0:1:103655><TERRORIST>"
-    >>> player, steamid, team = parse_player(pstring)
-    >>> print player, steamid, team
-    bl00db4th STEAM_0:1:103655 TE
+    >>> player, steamid = parse_player(pstring)
+    >>> print player, steamid
+    bl00db4th STEAM_0:1:103655
     '''
     assert pstring.count('<') >= 3
     assert pstring.count('>') >= 3
