@@ -1,10 +1,12 @@
+# import standard library
 from collections import namedtuple
 
+# import local libraries
 from utils import open_log
 from models import Player
 from models import Round
 
-
+# import and initialize logging
 import logging
 logger = logging.getLogger(__name__)
 
