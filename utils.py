@@ -25,3 +25,26 @@ def load_config(cfg):
     f = open(cfg)
     with f:
         return yaml.load(f)
+
+
+class testlogger(object):
+    ''' Used to reroute logging to print without having to comment out logging.  
+    
+    Usage:
+
+    from modulename import testlogger
+    logger = testlogger()'''
+    def __init__(self):
+        pass
+
+    def info(self, logline):
+        print logline
+
+    def debug(self, logline):
+        print logline
+
+    def error(self, logline):
+        print logline
+
+    def warning(self, logline):
+        print logline

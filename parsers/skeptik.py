@@ -2,7 +2,14 @@ from collections import namedtuple
 
 from utils import open_log
 from models import Player
-from models import LogLine
+from models import Round
+
+
+import logging
+logger = logging.getLogger(__name__)
+
+
+LogLine = namedtuple('LogLine', 'time date event')
 
 
 def logparser(log):
@@ -22,8 +29,8 @@ def logparser(log):
     '''
     for line in log:
         _, date, _, time, event = line.split(' ', 4)
-        
         if is_valid_event(event):
+            logger.info('parsed log event: {}'.format(event.strip()))
             yield LogLine(date, time.strip(':'), event.strip())
 
 
@@ -58,7 +65,7 @@ def round_factory(log_name):
 class Rounds(object):
     ''' Yields 'round' information continuously until the log is exhausted.
     
-    The round information is consumed by the main whorestats algorithm,
+    The round information is a dict that is consumed by the main whorestats algorithm,
     and modifies information in a database. '''
     def __init__(self, log):
         
@@ -78,32 +85,28 @@ class Rounds(object):
         round = self.rounds.next()
         winner = None
 
-        for event in round:
-            
-            if "CTs_Win" in event.event:
+        for log in round:
+            if "CTs_Win" in log.event:
                 winner = "CT"
-            elif "Terrorists_Win" in event.event:
+            elif "Terrorists_Win" in log.event:
                 winner = "T"
 
-            elif 'joined team "TERRORIST"' in event.event:
-                self.change_team(event, self.te)
+            elif 'joined team "TERRORIST"' in log.event:
+                self.change_team(log, self.te)
 
-            elif 'joined team "CT"' in event.event:
-                self.change_team(event, self.ct)
+            elif 'joined team "CT"' in log.event:
+                self.change_team(log, self.ct)
 
-            elif 'joined team "SPECTATOR"' in event.event:
-                self.change_team(event, self.sp)
+            elif 'joined team "SPECTATOR"' in log.event:
+                self.change_team(log, self.sp)
 
-            elif 'disconnected' in event.event:
-                self.change_team(event, remove=True)
+            elif 'disconnected' in log.event:
+                self.change_team(log, remove=True)
 
-        return {'winner': winner, 
-                'te': self.te, 
-                'ct': self.ct,
-                'sp': self.sp}
+        return Round(winner, self.te, self.ct, self.sp, round)
 
-    def change_team(self, event, team=None, remove=False):
-        player = parse_player(event.event)
+    def change_team(self, log, team=None, remove=False):
+        player = parse_player(log.event.split('"')[1])
         for t in (self.te, self.ct, self.sp):
             try:
                 del t[player.steamid]
@@ -122,7 +125,6 @@ def parse_player(pstring):
     >>> print player, steamid, team
     bl00db4th STEAM_0:1:103655 TE
     '''
-    pstring = pstring.split('"')[1]
     assert pstring.count('<') >= 3
     assert pstring.count('>') >= 3
     player, i, steamid, team = pstring.rsplit('<', 3)
